@@ -6,8 +6,9 @@ jobs:
     steps:
       - name: Code checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      # Java 11 لبناء المشروع (حسب متطلبات الـ project)
       - name: Set Java 11 for build
         uses: actions/setup-java@v4
         with:
@@ -20,25 +21,15 @@ jobs:
       - name: Checkstyle test
         run: mvn checkstyle:checkstyle
 
-      # Java 21 لتشغيل الـ Sonar Scanner
-      - name: Set Java 21 for Sonar
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-
-      - name: Setup Sonar Scanner
-        uses: warchant/setup-sonar-scanner@v8
-
       - name: SonarCloud Scan
-        run: >
-          sonar-scanner
-          -Dsonar.host.url=${{ secrets.SONAR_URL }}
-          -Dsonar.token=${{ secrets.SONAR_TOKEN }}
-          -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
-          -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
-          -Dsonar.sources=src/
-          -Dsonar.junit.reportsPath=target/surefire-reports/
-          -Dsonar.jacoco.reportsPath=target/jacoco.exec
-          -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml
-          -Dsonar.java.binaries=target/classes
+        uses: SonarSource/sonarqube-scan-action@v7
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
+            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
+            -Dsonar.sources=src/
+            -Dsonar.java.binaries=target/classes
+            -Dsonar.junit.reportPaths=target/surefire-reports
+            -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml
